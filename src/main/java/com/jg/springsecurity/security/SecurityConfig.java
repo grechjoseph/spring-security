@@ -1,7 +1,9 @@
 package com.jg.springsecurity.security;
 
+import com.jg.springsecurity.filter.SecurityFilter;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -17,6 +19,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.switchuser.SwitchUserFilter;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -54,10 +57,12 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure(final HttpSecurity http) throws Exception {
         http
             .authorizeRequests()
-                .antMatchers("/actuator/*").permitAll()
+                .antMatchers("/actuato*").permitAll()
                 .anyRequest().authenticated()
                 .and()
-                    .formLogin();
+                    .formLogin()
+                .and()
+                    .addFilterAfter(new SecurityFilter(), SwitchUserFilter.class);
     }
 
     @Bean
@@ -76,6 +81,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
      * 1. Create POJO implementing UserDetails. Map getAuthorities(), getUsername(), and getPassword() (encoded).
      */
     @Data
+    @Slf4j
     @RequiredArgsConstructor
     static class MyUserDetails implements UserDetails {
 
@@ -85,6 +91,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
         @Override
         public Collection<? extends GrantedAuthority> getAuthorities() {
+            log.info("getAuthorities");
             return Arrays.stream(roles)
                     .map(role -> (GrantedAuthority) () -> role)
                     .collect(Collectors.toList());
@@ -92,31 +99,37 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
         @Override
         public String getPassword() {
+            log.info("getPassword");
             return this.password;
         }
 
         @Override
         public String getUsername() {
+            log.info("getUsername");
             return this.username;
         }
 
         @Override
         public boolean isAccountNonExpired() {
+            log.info("isAccountNonExpired");
             return true;
         }
 
         @Override
         public boolean isAccountNonLocked() {
+            log.info("isAccountNonLocked");
             return true;
         }
 
         @Override
         public boolean isCredentialsNonExpired() {
+            log.info("isCredentialsNonExpired");
             return true;
         }
 
         @Override
         public boolean isEnabled() {
+            log.info("isEnabled");
             return true;
         }
     }
@@ -125,6 +138,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
      * 2. Create Service implementing UserDetailsService, overriding loadByUsername (fetch from DB?)
      * In this example, passwordEncoder is used to encode passwords (see @Bean PasswordEncoder).
      */
+    @Slf4j
     @RequiredArgsConstructor
     static class MyUserDetailsServices implements UserDetailsService {
 
@@ -132,6 +146,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
         @Override
         public UserDetails loadUserByUsername(final String username) throws UsernameNotFoundException {
+            log.info("loadUserByUsername");
             final String[] roles = new String[3];
             roles[0] = "OBSERVER";
             roles[1] = "USER";
@@ -144,6 +159,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     /**
      * 3. Create Service extending DaoAuthenticationProvider. This carries out checks and handling of authentication.
      */
+    @Slf4j
     @RequiredArgsConstructor
     static class MyAuthenticationProvider extends DaoAuthenticationProvider {
 
@@ -151,6 +167,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
         @Override
         protected void additionalAuthenticationChecks(final UserDetails userDetails, final UsernamePasswordAuthenticationToken authentication) throws AuthenticationException {
+            log.info("additionalAuthenticationChecks");
             final String presentedPassword = authentication.getCredentials().toString();
             final boolean matches = passwordEncoder.matches(presentedPassword, userDetails.getPassword());
 

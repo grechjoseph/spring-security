@@ -35,3 +35,16 @@
 <li>Protected by Default with SecurityConfig.</li>
 <li>@PreAuthorize("hasAuthority('PERMISSION_NAME')") to allow access by users having Authority PERMISSION_NAME only.</li>
 </ol>
+
+<h1>FilterOne/FilterTwo</h1>
+<ol>
+<li>These filters are not related to Spring Security, and therefore are not part of the Spring Security Filter Chain. Instead, these are part of the parent chain (ApplicationFilterChain).</li>
+<li>Override doFilter, including chain.doFilter.</li>
+<li>Add @Bean FilterRegistrationBean< FilterOne > and another for FilterTwo. These will be loaded in the order they are compiled. Alternatively, setOrder(LOWEST_PRECEDENCE) to run last, LOWEST_PRECENDE - 1 to run before last, etc.../li>
+</ol>
+
+<h1>SecurityFilter</h1>
+<ol>
+<li>In order to add a Filter to the SpringSecurityFilterChain, use http...and().addFilterAfter(new YourFilter(), Filter-To-Follow.class).</li>
+<li>NOTE: Filter-To-Follow.class must be a filter already registered to the SpringSecurityFilterChain.</li>
+</ol>
